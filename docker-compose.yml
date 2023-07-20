@@ -6,13 +6,12 @@ services:
     image: cassandra:3.11
     environment:
       LOG4J_FORMAT_MSG_NO_LOOKUPS: "true"
-    user: "999:999"
     volumes:
-    - ${OAI_DATA_FOLDER}/data/cassandra:/var/lib/cassandra/
-    - ${OAI_DATA_FOLDER}/configs/cassandra/cassandra.yaml:/etc/cassandra/cassandra.yaml
-    - ${OAI_DATA_FOLDER}/configs/cassandra/cassandra-env.sh:/etc/cassandra/cassandra-env.sh
-    - ${OAI_DATA_FOLDER}/configs/cassandra/jmxremote.access:/opt/java/openjdk/lib/management/jmxremote.access
-    - ${OAI_DATA_FOLDER}/configs/cassandra/jmxremote.password:/etc/cassandra/jmxremote.password
+    - cassandra-data:/var/lib/cassandra/
+    - ./configs/cassandra.yaml:/etc/cassandra/cassandra.yaml
+    - ./configs/cassandra-env.sh:/etc/cassandra/cassandra-env.sh
+    - ./configs/jmxremote.access:/opt/java/openjdk/lib/management/jmxremote.access
+    - ./configs/jmxremote.password:/etc/cassandra/jmxremote.password
     ports:
     - '9042:9042'
 
@@ -24,8 +23,8 @@ services:
     - cassandra-oai
     command: ["/wait-for-it.sh","cassandra-oai:9042","--", "sh", "/init-fizoai-database.sh"]
     volumes:
-    - ${OAI_DATA_FOLDER}/configs/cassandra/init-fizoai-database.sh:/init-fizoai-database.sh:ro
-    - ${OAI_DATA_FOLDER}/configs/cassandra/wait-for-it.sh:/wait-for-it.sh:ro
+    - ./configs/init-fizoai-database.sh:/init-fizoai-database.sh:ro
+    - ./configs/wait-for-it.sh:/wait-for-it.sh:ro
 
   cassandra-backup:
     hostname: cassandra-backup
@@ -34,11 +33,11 @@ services:
       JAVA_OPTS: "-Dlog4j2.formatMsgNoLookups=true"
       LOG4J_FORMAT_MSG_NO_LOOKUPS: "true"
     env_file:
-    - .cassandra_dump_env
+    - ./configs/.cassandra_dump_env
     volumes:
-    - ${OAI_DATA_FOLDER}/logs/cassandra-backup:/logs
-    - ${OAI_DATA_FOLDER}/data/cassandra:/source_data
-    - ${OAI_DATA_FOLDER}/data/cassandra-backup:/backup
+    - backup-logs:/logs
+    - cassandra-data:/source_data
+    - ./cassandra-backup:/backup
     depends_on:
     - cassandra-oai
 
@@ -47,7 +46,7 @@ services:
     hostname: elasticsearch-oai
     image: docker.elastic.co/elasticsearch/elasticsearch:7.17.3
     environment:
-      - bootstrap.memory_lock=true
+      # - bootstrap.memory_lock=true
       - "ES_JAVA_OPTS=-Dlog4j2.formatMsgNoLookups=true -Xms2g -Xmx2g"
       - "LOG4J_FORMAT_MSG_NO_LOOKUPS=true"
       - discovery.type=single-node
@@ -55,11 +54,10 @@ services:
       memlock:
         soft: -1
         hard: -1
-    user: "1000:1000"
     volumes:
-    - ${OAI_DATA_FOLDER}/logs/elasticsearch_oai:/usr/share/elasticsearch/logs
-    - ${OAI_DATA_FOLDER}/data/elasticsearch_oai/es-data:/usr/share/elasticsearch/es-data
-    - ${OAI_DATA_FOLDER}/configs/elasticsearch_oai/oai-elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml:ro
+    - es-logs:/usr/share/elasticsearch/logs
+    - es-data:/usr/share/elasticsearch/data
+    # - ./configs/oai-elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml:ro
     ports:
     - '9200:9200'
 
@@ -70,9 +68,9 @@ services:
     - elasticsearch-oai
     command: ["/wait-for-it.sh","elasticsearch-oai:9200","--", "sh", "/init-fizoai-elasticsearch.sh"]
     volumes:
-    - ${OAI_DATA_FOLDER}/configs/elasticsearch_oai/init-fizoai-elasticsearch.sh:/init-fizoai-elasticsearch.sh:ro
-    - ${OAI_DATA_FOLDER}/configs/elasticsearch_oai/item_mapping_es_v7:/item_mapping_es_v7:ro
-    - ${OAI_DATA_FOLDER}/configs/cassandra/wait-for-it.sh:/wait-for-it.sh:ro
+    - ./configs/init-fizoai-elasticsearch.sh:/init-fizoai-elasticsearch.sh:ro
+    - ./configs/item_mapping_es_v7:/item_mapping_es_v7:ro
+    - ./configs/wait-for-it.sh:/wait-for-it.sh:ro
 
   oai-backend:
     hostname: oai-backend
@@ -87,8 +85,8 @@ services:
     - "cassandra-oai"
     - "elasticsearch-oai"
     volumes:
-    - ${OAI_DATA_FOLDER}/configs/oai_backend/fiz-oai-backend.properties:/usr/local/tomcat/conf/fiz-oai-backend.properties:ro
-    - ${OAI_DATA_FOLDER}/logs/oai_backend/:/usr/local/tomcat/logs
+    - ./configs/fiz-oai-backend.properties:/usr/local/tomcat/conf/fiz-oai-backend.properties:ro
+    - backend-logs:/usr/local/tomcat/logs
     ports:
     - '8081:8080'
     
@@ -104,7 +102,17 @@ services:
     links: 
     - "oai-backend"
     volumes:
-    - ${OAI_DATA_FOLDER}/configs/oai_provider/oaicat.properties:/usr/local/tomcat/conf/oaicat.properties:ro
-    - ${OAI_DATA_FOLDER}/logs/oai_provider/:/usr/local/tomcat/logs
+    - ./configs/oaicat.properties:/usr/local/tomcat/conf/oaicat.properties:ro
+    - provider-logs:/usr/local/tomcat/logs
     ports:
     - '8080:8080'
+
+volumes:
+  cassandra-data:
+  es-data:
+  #persist logs
+  provider-logs:
+  backend-logs:
+  es-logs:
+  backup-logs:
+

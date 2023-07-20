@@ -5,12 +5,8 @@
 - jq package (just needed for crosswalk examples)
 
 # Installation
-- For installation execute the following command. It will prepare the folder structure and configuration for the application in the given INSTAL_DIRECTORY  
-  *host:/$> sudo ./install.sh INSTAL_DIRECTORY*  
-
-- Running the application  
-  *host:/$> cd INSTAL_DIRECTORY*  
-  *host:/$> sudo docker-compose up*  
+- For installation execute the following command.
+  *host:/$> docker compose up*  
 
 ### Change cassandra password
 
@@ -30,7 +26,7 @@
 
 - Set new cassandra password for the oai-backend container  
 
-  Edit INSTALL_DIR/configs/oai_backend/fiz-oai-backend.properties and change  
+  Edit /configs/fiz-oai-backend.properties and change  
   *cassandra.password=NEW_CASSANDRA_PASSWORD*  
 
 
@@ -58,7 +54,7 @@ Have a look at examples/addItem.sh. The curl command shows you how to create a m
 2) An item description for the metadata in JSON (item)  
 
 
-
+<!-- Moritz checked on macos until here. -->
 # Security
 The FIZ-OAI has no security features, like authentication or autorization. If needed you can adapt Basic-Auth to the service.
 The only Service allowed to be connected to the internet is the Oai-Provider. You should use vHost listening to 443 including a Reverse-Proxy and certificate for doing this:  

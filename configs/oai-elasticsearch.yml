@@ -30,7 +30,7 @@ node.name: elasticsearch-oai-master
 #
 # Path to directory where to store the data (separate multiple locations by comma):
 #
-path.data: /usr/share/elasticsearch/es-data
+path.data: /usr/share/elasticsearch/data
 #
 # Path to log files:
 #
